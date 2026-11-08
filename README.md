@@ -31,21 +31,33 @@ npm test
 | `src/data` | Categories, units and the sample dataset |
 | `src/utils` | Calculations, formatting and validation |
 
-## Progress
+## Features
 
-Done:
-
-- Project setup and navigation
-- Home dashboard
-- Create, edit and delete shopping lists
-- Add, edit and delete grocery items
-- Item subtotals and list totals in LKR
-- Local persistence with AsyncStorage
+- **Home Dashboard:** active lists, total, purchased and remaining items, and the estimated total
+- **My Shopping Lists:** create, rename and delete active lists, with progress and totals
+- **Add / Edit Grocery Item:** name, category, quantity, unit, estimated unit price and notes, with validation
+- **Shopping Checklist:** tick items as purchased, change quantities, edit or delete items, and complete or reopen the list
+- **Categories & Search:** search by product name and filter by category and purchase status
+- **Shopping History:** completed lists with item counts and cost summaries
+- Item subtotals, list totals and the amount still to buy, in LKR
+- Local persistence with AsyncStorage, with no internet connection needed
 - Sample dataset on first launch
 
-Still to do:
+## Testing
 
-- Mark items as purchased
-- Search and filters
-- Shopping history and summary
-- Offline and final testing
+`npm test` runs unit tests for calculations, filters, formatting and validation.
+
+The testing plan was also checked by clicking through a web build of the app:
+
+| Test | Result |
+| --- | --- |
+| Create a list and see it in the list view | Pass |
+| Add, edit and delete items | Pass |
+| Mark items as purchased and check progress and remaining counts | Pass |
+| Search for a product | Pass |
+| Filter by category and purchase status | Pass |
+| Check subtotals and totals with known values | Pass |
+| Reload the app and check that data is still there | Pass |
+| Use the app with the network turned off | Pass |
+
+Airplane mode on a physical phone still needs to be checked by hand.

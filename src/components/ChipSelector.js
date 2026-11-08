@@ -14,7 +14,7 @@ export default function ChipSelector({ label, options, value, onChange, error })
             <Pressable
               key={option}
               accessibilityRole="radio"
-              accessibilityState={{ selected }}
+              aria-checked={selected}
               onPress={() => onChange(option)}
               style={[styles.chip, selected && styles.chipSelected]}
             >

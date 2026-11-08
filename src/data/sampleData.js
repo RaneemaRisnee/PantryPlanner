@@ -20,6 +20,7 @@ export function createSampleData(now = new Date().toISOString()) {
         createdAt: now,
         updatedAt: now,
         completed: false,
+        completedAt: null,
       },
     ],
     items: SAMPLE_ITEMS.map(([name, category, quantity, unit, estimatedUnitPrice], index) => ({

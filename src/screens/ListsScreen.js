@@ -14,6 +14,7 @@ export default function ListsScreen({ navigation, route }) {
   const [formVisible, setFormVisible] = useState(false);
   const [editingList, setEditingList] = useState(null);
 
+  const activeLists = useMemo(() => lists.filter((list) => !list.completed), [lists]);
   const itemsByList = useMemo(() => {
     const grouped = {};
     items.forEach((item) => {
@@ -60,15 +61,15 @@ export default function ListsScreen({ navigation, route }) {
   return (
     <View style={styles.screen}>
       <FlatList
-        data={lists}
+        data={activeLists}
         keyExtractor={(list) => list.id}
         contentContainerStyle={styles.content}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <EmptyState
             icon="basket-outline"
-            title="No shopping lists yet"
-            message="Create your first list to start planning."
+            title="No active shopping lists"
+            message="Create a list to start planning. Completed lists are in History."
           />
         }
         renderItem={({ item: list }) => (

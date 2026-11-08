@@ -63,6 +63,7 @@ export function AppDataProvider({ children }) {
       createdAt: now,
       updatedAt: now,
       completed: false,
+      completedAt: null,
     };
     setData((current) => ({ ...current, lists: [list, ...current.lists] }));
     return list.id;
@@ -91,6 +92,18 @@ export function AppDataProvider({ children }) {
     }));
   }, []);
 
+  const setListCompleted = useCallback((listId, completed) => {
+    const now = new Date().toISOString();
+    setData((current) => ({
+      ...current,
+      lists: current.lists.map((list) =>
+        list.id === listId
+          ? { ...list, completed, completedAt: completed ? now : null, updatedAt: now }
+          : list,
+      ),
+    }));
+  }, []);
+
   const addItem = useCallback((listId, fields) => {
     const item = { ...fields, id: createId(), listId, purchased: false };
     setData((current) => ({
@@ -106,6 +119,19 @@ export function AppDataProvider({ children }) {
       return {
         lists: touchList(current.lists, existing.listId),
         items: current.items.map((item) => (item.id === itemId ? { ...item, ...fields } : item)),
+      };
+    });
+  }, []);
+
+  const togglePurchased = useCallback((itemId) => {
+    setData((current) => {
+      const existing = current.items.find((item) => item.id === itemId);
+      if (!existing) return current;
+      return {
+        lists: touchList(current.lists, existing.listId),
+        items: current.items.map((item) =>
+          item.id === itemId ? { ...item, purchased: !item.purchased } : item,
+        ),
       };
     });
   }, []);
@@ -129,11 +155,25 @@ export function AppDataProvider({ children }) {
       createList,
       updateList,
       deleteList,
+      setListCompleted,
       addItem,
       updateItem,
+      togglePurchased,
       deleteItem,
     }),
-    [data, status, load, createList, updateList, deleteList, addItem, updateItem, deleteItem],
+    [
+      data,
+      status,
+      load,
+      createList,
+      updateList,
+      deleteList,
+      setListCompleted,
+      addItem,
+      updateItem,
+      togglePurchased,
+      deleteItem,
+    ],
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

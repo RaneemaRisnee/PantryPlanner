@@ -20,7 +20,7 @@ export default function HomeScreen({ navigation }) {
         style={styles.fullCard}
       />
       <View style={styles.grid}>
-        <SummaryCard label="Lists" value={summary.listCount} style={styles.gridCard} />
+        <SummaryCard label="Active lists" value={summary.listCount} style={styles.gridCard} />
         <SummaryCard label="Total items" value={summary.totalItems} style={styles.gridCard} />
         <SummaryCard label="Purchased" value={summary.purchasedItems} style={styles.gridCard} />
         <SummaryCard label="Remaining" value={summary.remainingItems} style={styles.gridCard} />
@@ -34,6 +34,12 @@ export default function HomeScreen({ navigation }) {
         label="Create a new list"
         variant="outline"
         onPress={() => navigation.navigate('Lists', { create: true })}
+        style={styles.action}
+      />
+      <PrimaryButton
+        label="Search items"
+        variant="outline"
+        onPress={() => navigation.navigate('Search')}
       />
     </ScrollView>
   );

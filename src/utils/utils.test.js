@@ -2,7 +2,15 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { createSampleData } from '../data/sampleData.js';
-import { dashboardSummary, itemSubtotal, itemsTotal, listProgress } from './calculations.js';
+import {
+  dashboardSummary,
+  itemSubtotal,
+  itemsTotal,
+  listProgress,
+  remainingTotal,
+  stepQuantity,
+} from './calculations.js';
+import { filterItems, sortForChecklist } from './filters.js';
 import { formatCurrency, formatDate } from './format.js';
 import { validateItem, validateList } from './validation.js';
 
@@ -87,4 +95,60 @@ test('non-numeric and blank numbers are rejected, a zero price is allowed', () =
   assert.ok(validateItem({ ...validItem, quantity: 'abc' }).errors.quantity);
   assert.ok(validateItem({ ...validItem, estimatedUnitPrice: '' }).errors.estimatedUnitPrice);
   assert.equal(validateItem({ ...validItem, estimatedUnitPrice: '0' }).isValid, true);
+});
+
+const shopping = [
+  { id: '1', name: 'Rice', category: 'Grains', purchased: true, quantity: 5, estimatedUnitPrice: 240 },
+  { id: '2', name: 'Eggs', category: 'Dairy', purchased: false, quantity: 10, estimatedUnitPrice: 40 },
+  { id: '3', name: 'Milk powder', category: 'Dairy', purchased: true, quantity: 1, estimatedUnitPrice: 1100 },
+  { id: '4', name: 'Brown rice', category: 'Grains', purchased: false, quantity: 1, estimatedUnitPrice: 300 },
+];
+const names = (items) => items.map((item) => item.name);
+
+test('search matches part of a name, ignoring case and spaces', () => {
+  assert.deepEqual(names(filterItems(shopping, { query: '  RICE ' })), ['Brown rice', 'Rice']);
+  assert.deepEqual(names(filterItems(shopping, { query: 'tea' })), []);
+});
+
+test('filters by category and purchase status', () => {
+  assert.deepEqual(names(filterItems(shopping, { category: 'Dairy' })), ['Eggs', 'Milk powder']);
+  assert.deepEqual(names(filterItems(shopping, { status: 'Purchased' })), ['Milk powder', 'Rice']);
+  assert.deepEqual(names(filterItems(shopping, { status: 'Remaining' })), ['Brown rice', 'Eggs']);
+});
+
+test('search, category and status combine', () => {
+  const result = filterItems(shopping, { query: 'rice', category: 'Grains', status: 'Remaining' });
+  assert.deepEqual(names(result), ['Brown rice']);
+  assert.equal(filterItems(shopping).length, 4);
+});
+
+test('checklist shows remaining items before purchased ones', () => {
+  assert.deepEqual(names(sortForChecklist(shopping)), ['Eggs', 'Brown rice', 'Rice', 'Milk powder']);
+});
+
+test('remaining total counts unpurchased items only', () => {
+  assert.equal(remainingTotal(shopping), 700);
+});
+
+test('dashboard leaves out completed lists', () => {
+  const lists = [
+    { id: 'a', completed: false },
+    { id: 'b', completed: true },
+  ];
+  const items = [
+    { listId: 'a', purchased: true, quantity: 2, estimatedUnitPrice: 100 },
+    { listId: 'b', purchased: false, quantity: 1, estimatedUnitPrice: 999 },
+  ];
+  assert.deepEqual(dashboardSummary({ lists, items }), {
+    listCount: 1,
+    totalItems: 1,
+    purchasedItems: 1,
+    remainingItems: 0,
+    estimatedTotal: 200,
+  });
+});
+
+test('quantity steps by one without floating point noise', () => {
+  assert.equal(stepQuantity(1.3, -1), 0.3);
+  assert.equal(stepQuantity(5, 1), 6);
 });

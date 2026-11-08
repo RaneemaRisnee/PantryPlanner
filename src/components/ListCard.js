@@ -6,8 +6,15 @@ import { formatCurrency, formatDate } from '../utils/format';
 import IconButton from './IconButton';
 import ProgressBar from './ProgressBar';
 
+// onEdit and onDelete are optional. Each one shows its button only when given.
 export default function ListCard({ list, items, onOpen, onEdit, onDelete }) {
   const progress = listProgress(items);
+  const actionCount = (onEdit ? 1 : 0) + (onDelete ? 1 : 0);
+  const dateLabel =
+    list.completed && list.completedAt
+      ? `Completed ${formatDate(list.completedAt)}`
+      : `Created ${formatDate(list.createdAt)}`;
+
   return (
     <View>
       <Pressable
@@ -16,11 +23,11 @@ export default function ListCard({ list, items, onOpen, onEdit, onDelete }) {
         onPress={onOpen}
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
-        <View style={styles.titleBlock}>
+        <View style={[styles.titleBlock, { paddingRight: actionCount * 42 }]}>
           <Text style={styles.title} numberOfLines={1}>
             {list.title}
           </Text>
-          <Text style={styles.meta}>Created {formatDate(list.createdAt)}</Text>
+          <Text style={styles.meta}>{dateLabel}</Text>
         </View>
         {list.description ? (
           <Text style={styles.description} numberOfLines={2}>
@@ -36,15 +43,21 @@ export default function ListCard({ list, items, onOpen, onEdit, onDelete }) {
         </View>
       </Pressable>
       {/* Siblings of the card, because nested buttons are unreachable by screen readers. */}
-      <View style={styles.actions}>
-        <IconButton name="create-outline" label={`Edit ${list.title}`} onPress={onEdit} />
-        <IconButton
-          name="trash-outline"
-          label={`Delete ${list.title}`}
-          color={colors.danger}
-          onPress={onDelete}
-        />
-      </View>
+      {actionCount > 0 ? (
+        <View style={styles.actions}>
+          {onEdit ? (
+            <IconButton name="create-outline" label={`Edit ${list.title}`} onPress={onEdit} />
+          ) : null}
+          {onDelete ? (
+            <IconButton
+              name="trash-outline"
+              label={`Delete ${list.title}`}
+              color={colors.danger}
+              onPress={onDelete}
+            />
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -58,7 +71,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   pressed: { opacity: 0.85 },
-  titleBlock: { marginBottom: spacing.sm, paddingRight: 84 },
+  titleBlock: { marginBottom: spacing.sm },
   actions: {
     flexDirection: 'row',
     position: 'absolute',

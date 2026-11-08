@@ -2,9 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import HistoryScreen from '../screens/HistoryScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ItemFormScreen from '../screens/ItemFormScreen';
 import ListsScreen from '../screens/ListsScreen';
+import SearchScreen from '../screens/SearchScreen';
 import ShoppingChecklistScreen from '../screens/ShoppingChecklistScreen';
 import { colors } from '../theme';
 
@@ -17,7 +19,12 @@ const headerOptions = {
   headerTitleStyle: { fontWeight: '700' },
 };
 
-const TAB_ICONS = { Home: 'home-outline', Lists: 'list-outline' };
+const TAB_ICONS = {
+  Home: 'home-outline',
+  Lists: 'list-outline',
+  Search: 'search-outline',
+  History: 'time-outline',
+};
 
 function Tabs() {
   return (
@@ -40,6 +47,16 @@ function Tabs() {
         name="Lists"
         component={ListsScreen}
         options={{ title: 'My Shopping Lists', tabBarLabel: 'Lists' }}
+      />
+      <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{ title: 'Categories & Search', tabBarLabel: 'Search' }}
+      />
+      <Tab.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{ title: 'Shopping History', tabBarLabel: 'History' }}
       />
     </Tab.Navigator>
   );
