@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import EmptyState from '../components/EmptyState';
@@ -10,7 +10,7 @@ import { useAppData } from '../context/AppDataContext';
 import { colors, spacing } from '../theme';
 import { itemsTotal, listProgress, remainingTotal, stepQuantity } from '../utils/calculations';
 import { confirmDelete } from '../utils/confirm';
-import { sortForChecklist } from '../utils/filters';
+import { groupByCategory } from '../utils/categories';
 import { formatCurrency, formatDate } from '../utils/format';
 
 export default function ShoppingChecklistScreen({ navigation, route }) {
@@ -19,10 +19,8 @@ export default function ShoppingChecklistScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
 
   const list = lists.find((candidate) => candidate.id === listId);
-  const listItems = useMemo(
-    () => sortForChecklist(items.filter((item) => item.listId === listId)),
-    [items, listId],
-  );
+  const listItems = useMemo(() => items.filter((item) => item.listId === listId), [items, listId]);
+  const sections = useMemo(() => groupByCategory(listItems), [listItems]);
   const progress = listProgress(listItems);
 
   // Keeps the header in step when the list is renamed.
@@ -64,10 +62,20 @@ export default function ShoppingChecklistScreen({ navigation, route }) {
           </View>
         </View>
       </View>
-      <FlatList
-        data={listItems}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
+        stickySectionHeadersEnabled={false}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {section.title} · {section.data.length}
+            </Text>
+            <Text style={styles.sectionTotal}>{formatCurrency(section.total)}</Text>
+          </View>
+        )}
+        SectionSeparatorComponent={() => <View style={styles.sectionGap} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <EmptyState
@@ -123,8 +131,17 @@ const styles = StyleSheet.create({
   summaryTotal: { color: colors.primary, fontSize: 22, fontWeight: '700', marginTop: 2 },
   remaining: { alignItems: 'flex-end' },
   remainingTotal: { color: colors.text, fontSize: 22, fontWeight: '700', marginTop: 2 },
-  content: { flexGrow: 1, padding: spacing.lg },
+  content: { flexGrow: 1, paddingBottom: spacing.lg, paddingHorizontal: spacing.lg },
   separator: { height: spacing.md },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: spacing.lg,
+  },
+  sectionTitle: { color: colors.primary, fontSize: 15, fontWeight: '700' },
+  sectionTotal: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
+  sectionGap: { height: spacing.sm },
   footer: {
     backgroundColor: colors.surface,
     borderTopColor: colors.border,

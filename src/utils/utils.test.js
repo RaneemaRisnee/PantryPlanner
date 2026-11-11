@@ -10,6 +10,7 @@ import {
   remainingTotal,
   stepQuantity,
 } from './calculations.js';
+import { categoryBreakdown, groupByCategory, mostExpensiveItems } from './categories.js';
 import { filterItems, sortForChecklist } from './filters.js';
 import { formatCurrency, formatDate } from './format.js';
 import { validateItem, validateList } from './validation.js';
@@ -151,4 +152,54 @@ test('dashboard leaves out completed lists', () => {
 test('quantity steps by one without floating point noise', () => {
   assert.equal(stepQuantity(1.3, -1), 0.3);
   assert.equal(stepQuantity(5, 1), 6);
+});
+
+test('checklist groups items by category in the standard order', () => {
+  const sections = groupByCategory(createSampleData().items);
+  assert.deepEqual(
+    sections.map((section) => section.title),
+    ['Vegetables', 'Dairy', 'Bakery', 'Grains'],
+  );
+  const dairy = sections.find((section) => section.title === 'Dairy');
+  assert.deepEqual(names(dairy.data), ['Milk powder', 'Eggs']);
+  assert.equal(dairy.total, 1500);
+});
+
+test('purchased items sink to the bottom of their category', () => {
+  const dairy = groupByCategory(shopping).find((section) => section.title === 'Dairy');
+  assert.deepEqual(names(dairy.data), ['Eggs', 'Milk powder']);
+});
+
+test('unknown categories are listed last', () => {
+  const items = [
+    { name: 'Soap', category: 'Toiletries', purchased: false, quantity: 1, estimatedUnitPrice: 1 },
+    { name: 'Bread', category: 'Bakery', purchased: false, quantity: 1, estimatedUnitPrice: 1 },
+  ];
+  assert.deepEqual(
+    groupByCategory(items).map((section) => section.title),
+    ['Bakery', 'Toiletries'],
+  );
+});
+
+test('category breakdown totals and shares add up', () => {
+  const breakdown = categoryBreakdown(createSampleData().items);
+  const grains = breakdown.find((row) => row.category === 'Grains');
+  assert.equal(grains.total, 1480);
+  assert.equal(grains.itemCount, 2);
+  assert.equal(breakdown.reduce((sum, row) => sum + row.total, 0), 3630);
+  assert.ok(Math.abs(breakdown.reduce((sum, row) => sum + row.share, 0) - 1) < 1e-9);
+});
+
+test('breakdown of an empty list is empty, and shares never divide by zero', () => {
+  assert.deepEqual(categoryBreakdown([]), []);
+  const free = [{ name: 'Bag', category: 'Other', purchased: false, quantity: 1, estimatedUnitPrice: 0 }];
+  assert.equal(categoryBreakdown(free)[0].share, 0);
+});
+
+test('most expensive items are ranked by subtotal', () => {
+  assert.deepEqual(names(mostExpensiveItems(createSampleData().items)), [
+    'Rice',
+    'Milk powder',
+    'Eggs',
+  ]);
 });

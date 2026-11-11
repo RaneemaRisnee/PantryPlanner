@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import HistoryScreen from '../screens/HistoryScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ItemFormScreen from '../screens/ItemFormScreen';
+import ListSummaryScreen from '../screens/ListSummaryScreen';
 import ListsScreen from '../screens/ListsScreen';
 import SearchScreen from '../screens/SearchScreen';
 import ShoppingChecklistScreen from '../screens/ShoppingChecklistScreen';
-import { colors } from '../theme';
+import { colors, spacing } from '../theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -69,7 +71,25 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Checklist"
         component={ShoppingChecklistScreen}
-        options={({ route }) => ({ title: route.params.title })}
+        options={({ navigation, route }) => ({
+          title: route.params.title,
+          headerRight: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="List summary"
+              hitSlop={spacing.sm}
+              onPress={() => navigation.navigate('ListSummary', { listId: route.params.listId })}
+              style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}
+            >
+              <Text style={styles.headerButton}>Summary</Text>
+            </Pressable>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="ListSummary"
+        component={ListSummaryScreen}
+        options={{ title: 'Shopping Summary' }}
       />
       <Stack.Screen
         name="ItemForm"
@@ -79,3 +99,9 @@ export default function AppNavigator() {
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  headerAction: { paddingHorizontal: spacing.sm },
+  headerButton: { color: colors.white, fontSize: 16, fontWeight: '600' },
+  pressed: { opacity: 0.6 },
+});

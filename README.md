@@ -36,7 +36,8 @@ npm test
 - **Home Dashboard:** active lists, total, purchased and remaining items, and the estimated total
 - **My Shopping Lists:** create, rename and delete active lists, with progress and totals
 - **Add / Edit Grocery Item:** name, category, quantity, unit, estimated unit price and notes, with validation
-- **Shopping Checklist:** tick items as purchased, change quantities, edit or delete items, and complete or reopen the list
+- **Shopping Checklist:** items grouped by category with category subtotals. Tick items as purchased, change quantities, edit or delete items, and complete or reopen the list
+- **Shopping Summary:** for each list, the purchased amount and amount still to buy, cost by category with each category's share, and the most expensive items
 - **Categories & Search:** search by product name and filter by category and purchase status
 - **Shopping History:** completed lists with item counts and cost summaries
 - Item subtotals, list totals and the amount still to buy, in LKR
@@ -57,6 +58,7 @@ The testing plan was also checked by clicking through a web build of the app:
 | Search for a product | Pass |
 | Filter by category and purchase status | Pass |
 | Check subtotals and totals with known values | Pass |
+| Check category grouping and category cost totals | Pass |
 | Reload the app and check that data is still there | Pass |
 | Use the app with the network turned off | Pass |
 
