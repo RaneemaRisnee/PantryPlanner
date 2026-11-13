@@ -13,6 +13,7 @@ import {
 import { categoryBreakdown, groupByCategory, mostExpensiveItems } from './categories.js';
 import { filterItems, sortForChecklist } from './filters.js';
 import { formatCurrency, formatDate } from './format.js';
+import { InvalidDataError, sanitizeData } from '../storage/sanitize.js';
 import { validateItem, validateList } from './validation.js';
 
 const validItem = {
@@ -202,4 +203,87 @@ test('most expensive items are ranked by subtotal', () => {
     'Milk powder',
     'Eggs',
   ]);
+});
+
+test('number formats that are not plain decimals are rejected', () => {
+  for (const quantity of ['1e5', '-2', '1,5', '2 kg', '0x10', '1.2345']) {
+    assert.ok(validateItem({ ...validItem, quantity }).errors.quantity, quantity);
+  }
+  for (const price of ['1,100', '1e3', '99.999', 'Rs 100']) {
+    assert.ok(validateItem({ ...validItem, estimatedUnitPrice: price }).errors.estimatedUnitPrice, price);
+  }
+  const decimals = validateItem({ ...validItem, quantity: '0.5', estimatedUnitPrice: '99.50' });
+  assert.equal(decimals.isValid, true);
+  assert.equal(decimals.quantity, 0.5);
+});
+
+test('quantity and price have upper limits', () => {
+  assert.ok(validateItem({ ...validItem, quantity: '10001' }).errors.quantity);
+  assert.equal(validateItem({ ...validItem, quantity: '10000' }).isValid, true);
+  assert.ok(validateItem({ ...validItem, estimatedUnitPrice: '10000001' }).errors.estimatedUnitPrice);
+});
+
+test('an item name cannot be repeated in the same list, ignoring case', () => {
+  assert.match(validateItem({ ...validItem, name: ' rice ' }, ['Rice', 'Eggs']).errors.name, /already/);
+  assert.equal(validateItem(validItem, ['Eggs']).isValid, true);
+});
+
+test('valid saved data passes through unchanged', () => {
+  const sample = createSampleData('2026-11-01T00:00:00.000Z');
+  const { data, dropped } = sanitizeData(sample);
+  assert.deepEqual(data, sample);
+  assert.equal(dropped, 0);
+});
+
+test('saved data in the wrong shape is reported, not loaded', () => {
+  for (const bad of [null, 'text', {}, { lists: [] }, { lists: {}, items: [] }]) {
+    assert.throws(() => sanitizeData(bad), InvalidDataError);
+  }
+});
+
+test('damaged records are dropped and missing fields get defaults', () => {
+  const now = '2026-11-13T00:00:00.000Z';
+  const { data, dropped } = sanitizeData(
+    {
+      lists: [
+        { id: 'a', title: 'Weekly', createdAt: '2026-11-01T00:00:00.000Z' },
+        { id: 'a', title: 'Duplicate id' },
+        { id: 'b' },
+        { id: 'c', title: 'Done', completed: true },
+      ],
+      items: [
+        { id: '1', listId: 'a', name: 'Rice', quantity: 5, estimatedUnitPrice: 240, category: 'Snacks' },
+        { id: '2', listId: 'missing', name: 'Orphan', quantity: 1, estimatedUnitPrice: 1 },
+        { id: '3', listId: 'a', name: 'Bad quantity', quantity: '5', estimatedUnitPrice: 1 },
+        { id: '4', listId: 'a', name: 'Negative', quantity: 1, estimatedUnitPrice: -1 },
+        { id: '5', listId: 'a', name: '', quantity: 1, estimatedUnitPrice: 1 },
+      ],
+    },
+    now,
+  );
+  assert.deepEqual(data.lists.map((list) => list.title), ['Weekly', 'Done']);
+  assert.deepEqual(data.lists[0], {
+    id: 'a',
+    title: 'Weekly',
+    description: '',
+    createdAt: '2026-11-01T00:00:00.000Z',
+    updatedAt: '2026-11-01T00:00:00.000Z',
+    completed: false,
+    completedAt: null,
+  });
+  assert.equal(data.lists[1].completedAt, now);
+  assert.deepEqual(data.items, [
+    {
+      id: '1',
+      listId: 'a',
+      name: 'Rice',
+      category: 'Other',
+      quantity: 5,
+      unit: 'pieces',
+      estimatedUnitPrice: 240,
+      purchased: false,
+      notes: '',
+    },
+  ]);
+  assert.equal(dropped, 6);
 });

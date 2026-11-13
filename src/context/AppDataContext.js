@@ -7,9 +7,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Alert } from 'react-native';
-
-import { loadData, saveData } from '../storage/storage';
+import { loadData, resetData, saveData } from '../storage/storage';
+import { notify } from '../utils/confirm';
 
 const AppDataContext = createContext(null);
 
@@ -42,6 +41,18 @@ export function AppDataProvider({ children }) {
     load();
   }, [load]);
 
+  // Recovery for damaged data: the old data is kept as a backup on the device.
+  const startFresh = useCallback(async () => {
+    setStatus('loading');
+    try {
+      setData(await resetData());
+      setStatus('ready');
+    } catch (error) {
+      console.error('Could not reset data', error);
+      setStatus('error');
+    }
+  }, []);
+
   // Saving only starts once loading succeeds, so a failed load cannot wipe saved data.
   // Writes are queued so that an older snapshot can never land after a newer one.
   useEffect(() => {
@@ -50,7 +61,7 @@ export function AppDataProvider({ children }) {
       .then(() => saveData(data))
       .catch((error) => {
         console.error('Could not save data', error);
-        Alert.alert('Not saved', 'Your latest change could not be saved on this device.');
+        notify('Not saved', 'Your latest change could not be saved on this device.');
       });
   }, [data, status]);
 
@@ -152,6 +163,7 @@ export function AppDataProvider({ children }) {
       ...data,
       status,
       reload: load,
+      startFresh,
       createList,
       updateList,
       deleteList,
@@ -165,6 +177,7 @@ export function AppDataProvider({ children }) {
       data,
       status,
       load,
+      startFresh,
       createList,
       updateList,
       deleteList,

@@ -42,11 +42,13 @@ npm test
 - **Shopping History:** completed lists with item counts and cost summaries
 - Item subtotals, list totals and the amount still to buy, in LKR
 - Local persistence with AsyncStorage, with no internet connection needed
+- Saved data is checked when the app opens. Damaged records are removed, and if the data cannot be read at all the app offers to start fresh while keeping a backup
+- Input validation: plain numbers only, sensible upper limits, no duplicate items in a list, and a prompt before discarding unsaved changes
 - Sample dataset on first launch
 
 ## Testing
 
-`npm test` runs unit tests for calculations, filters, formatting and validation.
+`npm test` runs unit tests for calculations, categories, filters, formatting, validation and saved-data checks.
 
 The testing plan was also checked by clicking through a web build of the app:
 
@@ -61,5 +63,8 @@ The testing plan was also checked by clicking through a web build of the app:
 | Check category grouping and category cost totals | Pass |
 | Reload the app and check that data is still there | Pass |
 | Use the app with the network turned off | Pass |
+| Reject invalid numbers and duplicate items | Pass |
+| Ask before discarding unsaved item changes | Pass |
+| Recover from damaged saved data | Pass |
 
 Airplane mode on a physical phone still needs to be checked by hand.

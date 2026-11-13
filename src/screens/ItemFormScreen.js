@@ -1,14 +1,17 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { usePreventRemove } from '@react-navigation/native';
 import { useHeaderHeight } from '@react-navigation/elements';
+import { useEffect, useMemo, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ChipSelector from '../components/ChipSelector';
+import EmptyState from '../components/EmptyState';
 import FormField from '../components/FormField';
 import PrimaryButton from '../components/PrimaryButton';
 import { useAppData } from '../context/AppDataContext';
 import { CATEGORIES, UNITS } from '../data/constants';
 import { colors, spacing } from '../theme';
+import { confirmAction } from '../utils/confirm';
 import { validateItem } from '../utils/validation';
 
 export default function ItemFormScreen({ navigation, route }) {
@@ -18,16 +21,63 @@ export default function ItemFormScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const existing = itemId ? items.find((item) => item.id === itemId) : undefined;
 
-  const [name, setName] = useState(existing?.name ?? '');
-  const [category, setCategory] = useState(existing?.category ?? '');
-  const [quantity, setQuantity] = useState(existing ? String(existing.quantity) : '1');
-  const [unit, setUnit] = useState(existing?.unit ?? '');
-  const [price, setPrice] = useState(existing ? String(existing.estimatedUnitPrice) : '');
-  const [notes, setNotes] = useState(existing?.notes ?? '');
+  const [initial] = useState(() => ({
+    name: existing?.name ?? '',
+    category: existing?.category ?? '',
+    quantity: existing ? String(existing.quantity) : '1',
+    unit: existing?.unit ?? '',
+    price: existing ? String(existing.estimatedUnitPrice) : '',
+    notes: existing?.notes ?? '',
+  }));
+  const [name, setName] = useState(initial.name);
+  const [category, setCategory] = useState(initial.category);
+  const [quantity, setQuantity] = useState(initial.quantity);
+  const [unit, setUnit] = useState(initial.unit);
+  const [price, setPrice] = useState(initial.price);
+  const [notes, setNotes] = useState(initial.notes);
   const [errors, setErrors] = useState({});
+  const [saved, setSaved] = useState(false);
+
+  const otherNames = useMemo(
+    () => items.filter((item) => item.listId === listId && item.id !== itemId).map((item) => item.name),
+    [items, listId, itemId],
+  );
+
+  const current = { name, category, quantity, unit, price, notes };
+  const hasChanges = Object.keys(initial).some((key) => initial[key] !== current[key]);
+
+  // Asks before leaving with unsaved changes, including the back gesture.
+  usePreventRemove(hasChanges && !saved, ({ data }) => {
+    confirmAction(
+      'Discard changes?',
+      'Your changes to this item have not been saved.',
+      'Discard',
+      () => navigation.dispatch(data.action),
+    );
+  });
+
+  // Leaves only after the saved flag is applied, so the discard prompt is not shown.
+  useEffect(() => {
+    if (saved) navigation.goBack();
+  }, [saved, navigation]);
+
+  if (itemId && !existing && !saved) {
+    return (
+      <View style={styles.screen}>
+        <EmptyState
+          icon="alert-circle-outline"
+          title="Item not found"
+          message="This item may have been deleted. Go back to the list to continue."
+        />
+      </View>
+    );
+  }
 
   const handleSave = () => {
-    const result = validateItem({ name, category, quantity, unit, estimatedUnitPrice: price });
+    const result = validateItem(
+      { name, category, quantity, unit, estimatedUnitPrice: price },
+      otherNames,
+    );
     setErrors(result.errors);
     if (!result.isValid) return;
 
@@ -44,7 +94,7 @@ export default function ItemFormScreen({ navigation, route }) {
     } else {
       addItem(listId, fields);
     }
-    navigation.goBack();
+    setSaved(true);
   };
 
   return (
@@ -79,6 +129,7 @@ export default function ItemFormScreen({ navigation, route }) {
             onChangeText={setQuantity}
             keyboardType="decimal-pad"
             error={errors.quantity}
+            maxLength={9}
             style={styles.rowField}
           />
           <FormField
@@ -88,6 +139,7 @@ export default function ItemFormScreen({ navigation, route }) {
             keyboardType="decimal-pad"
             placeholder="0.00"
             error={errors.estimatedUnitPrice}
+            maxLength={11}
             style={styles.rowField}
           />
         </View>

@@ -4,7 +4,13 @@ import { colors, radius } from '../theme';
 
 export default function ProgressBar({ fraction }) {
   return (
-    <View style={styles.track}>
+    <View
+      accessibilityRole="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(fraction * 100)}
+      style={styles.track}
+    >
       <View style={[styles.fill, { width: `${fraction * 100}%` }]} />
     </View>
   );

@@ -7,9 +7,10 @@ import PrimaryButton from './src/components/PrimaryButton';
 import { AppDataProvider, useAppData } from './src/context/AppDataContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { colors, spacing } from './src/theme';
+import { confirmAction } from './src/utils/confirm';
 
 function AppContent() {
-  const { status, reload } = useAppData();
+  const { status, reload, startFresh } = useAppData();
 
   if (status === 'loading') {
     return (
@@ -22,8 +23,25 @@ function AppContent() {
   if (status === 'error') {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Your saved lists could not be loaded.</Text>
-        <PrimaryButton label="Try again" onPress={reload} />
+        <Text style={styles.errorTitle}>Your saved lists could not be loaded</Text>
+        <Text style={styles.errorText}>
+          Try again first. If the problem continues, the saved data may be damaged. Starting fresh
+          keeps a backup of it on this device and opens the app with no lists.
+        </Text>
+        <PrimaryButton label="Try again" onPress={reload} style={styles.errorButton} />
+        <PrimaryButton
+          label="Start fresh"
+          variant="outline"
+          style={styles.errorButton}
+          onPress={() =>
+            confirmAction(
+              'Start fresh?',
+              'The app will open with no lists. Your current data is kept as a backup on this device.',
+              'Start fresh',
+              startFresh,
+            )
+          }
+        />
       </View>
     );
   }
@@ -54,10 +72,18 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     backgroundColor: colors.background,
   },
-  errorText: {
+  errorTitle: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
     textAlign: 'center',
-    marginBottom: spacing.lg,
   },
+  errorText: {
+    color: colors.textMuted,
+    fontSize: 15,
+    marginBottom: spacing.xl,
+    textAlign: 'center',
+  },
+  errorButton: { alignSelf: 'stretch', marginBottom: spacing.md },
 });

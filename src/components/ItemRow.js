@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing } from '../theme';
 import { itemSubtotal } from '../utils/calculations';
 import { formatCurrency } from '../utils/format';
+import { MAX_QUANTITY } from '../utils/validation';
 import IconButton from './IconButton';
 
 export default function ItemRow({ item, onTogglePurchased, onChangeQuantity, onEdit, onDelete }) {
@@ -49,6 +50,7 @@ export default function ItemRow({ item, onTogglePurchased, onChangeQuantity, onE
           <IconButton
             name="add-circle-outline"
             label={`Increase ${item.name} quantity`}
+            disabled={item.quantity + 1 > MAX_QUANTITY}
             onPress={() => onChangeQuantity(1)}
           />
           <Text style={[styles.subtotal, purchased && styles.subtotalPurchased]}>
